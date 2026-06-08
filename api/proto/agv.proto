@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package agv;
+
+option go_package = "github.com/port-agv/routing/api/proto/agv";
+
+service AGVDispatchService {
+  rpc DispatchTask(DispatchTaskRequest) returns (DispatchTaskResponse);
+  rpc StreamTaskStatus(StreamTaskStatusRequest) returns (stream TaskStatusUpdate);
+  rpc GetRoute(GetRouteRequest) returns (GetRouteResponse);
+}
+
+message DispatchTaskRequest {
+  string task_id = 1;
+  string container_id = 2;
+  string agv_id = 3;
+  string yard_node_id = 4;
+  string quayside_node_id = 5;
+  int32 priority = 6;
+  int64 deadline_unix = 7;
+}
+
+message DispatchTaskResponse {
+  bool success = 1;
+  string message = 2;
+  string route_id = 3;
+  repeated ControlFrameProto frames = 4;
+  double total_distance = 5;
+  double estimated_time = 6;
+}
+
+message ControlFrameProto {
+  int32 sequence = 1;
+  string node_id = 2;
+  int32 maneuver = 3;
+  double speed = 4;
+  double target_angle = 5;
+  double delta_angle = 6;
+  double distance = 7;
+  string agv_id = 8;
+}
+
+message StreamTaskStatusRequest {
+  string task_id = 1;
+}
+
+message TaskStatusUpdate {
+  string task_id = 1;
+  string agv_id = 2;
+  int32 status = 3;
+  string current_node_id = 4;
+  double progress = 5;
+  int64 timestamp = 6;
+}
+
+message GetRouteRequest {
+  string source_node_id = 1;
+  string target_node_id = 2;
+  repeated string intermediate_node_ids = 3;
+}
+
+message GetRouteResponse {
+  bool found = 1;
+  repeated PathNodeProto path = 2;
+  double total_distance = 3;
+  double total_weight = 4;
+  repeated EdgeInfoProto edges = 5;
+}
+
+message PathNodeProto {
+  string id = 1;
+  double x = 2;
+  double y = 3;
+  double angle = 4;
+}
+
+message EdgeInfoProto {
+  string from = 1;
+  string to = 2;
+  double weight = 3;
+  double length = 4;
+  double congestion = 5;
+}
