@@ -229,6 +229,8 @@ func main() {
 	sched.DeadlockCheck = true
 	sched.RerouteLimit = 3
 
+	mqttClient.SetCraneSensorHandler(sched.SafetyGateway().ProcessCraneSensorMessage)
+
 	grpcServer := grpc.NewServer(g, mqttClient, sched, *grpcPort)
 
 	deadlockStopCh := sched.StartDeadlockMonitor(5 * time.Second)

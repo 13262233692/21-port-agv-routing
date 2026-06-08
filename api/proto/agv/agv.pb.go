@@ -22,16 +22,17 @@ const (
 )
 
 type DispatchTaskRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	TaskId         string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	ContainerId    string                 `protobuf:"bytes,2,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
-	AgvId          string                 `protobuf:"bytes,3,opt,name=agv_id,json=agvId,proto3" json:"agv_id,omitempty"`
-	YardNodeId     string                 `protobuf:"bytes,4,opt,name=yard_node_id,json=yardNodeId,proto3" json:"yard_node_id,omitempty"`
-	QuaysideNodeId string                 `protobuf:"bytes,5,opt,name=quayside_node_id,json=quaysideNodeId,proto3" json:"quayside_node_id,omitempty"`
-	Priority       int32                  `protobuf:"varint,6,opt,name=priority,proto3" json:"priority,omitempty"`
-	DeadlineUnix   int64                  `protobuf:"varint,7,opt,name=deadline_unix,json=deadlineUnix,proto3" json:"deadline_unix,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TaskId          string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	ContainerId     string                 `protobuf:"bytes,2,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
+	AgvId           string                 `protobuf:"bytes,3,opt,name=agv_id,json=agvId,proto3" json:"agv_id,omitempty"`
+	YardNodeId      string                 `protobuf:"bytes,4,opt,name=yard_node_id,json=yardNodeId,proto3" json:"yard_node_id,omitempty"`
+	QuaysideNodeId  string                 `protobuf:"bytes,5,opt,name=quayside_node_id,json=quaysideNodeId,proto3" json:"quayside_node_id,omitempty"`
+	Priority        int32                  `protobuf:"varint,6,opt,name=priority,proto3" json:"priority,omitempty"`
+	DeadlineUnix    int64                  `protobuf:"varint,7,opt,name=deadline_unix,json=deadlineUnix,proto3" json:"deadline_unix,omitempty"`
+	ContainerWeight *ContainerWeightProto  `protobuf:"bytes,8,opt,name=container_weight,json=containerWeight,proto3" json:"container_weight,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *DispatchTaskRequest) Reset() {
@@ -113,21 +114,97 @@ func (x *DispatchTaskRequest) GetDeadlineUnix() int64 {
 	return 0
 }
 
-type DispatchTaskResponse struct {
+func (x *DispatchTaskRequest) GetContainerWeight() *ContainerWeightProto {
+	if x != nil {
+		return x.ContainerWeight
+	}
+	return nil
+}
+
+type ContainerWeightProto struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	RouteId       string                 `protobuf:"bytes,3,opt,name=route_id,json=routeId,proto3" json:"route_id,omitempty"`
-	Frames        []*ControlFrameProto   `protobuf:"bytes,4,rep,name=frames,proto3" json:"frames,omitempty"`
-	TotalDistance float64                `protobuf:"fixed64,5,opt,name=total_distance,json=totalDistance,proto3" json:"total_distance,omitempty"`
-	EstimatedTime float64                `protobuf:"fixed64,6,opt,name=estimated_time,json=estimatedTime,proto3" json:"estimated_time,omitempty"`
+	FrontLeft     float64                `protobuf:"fixed64,1,opt,name=front_left,json=frontLeft,proto3" json:"front_left,omitempty"`
+	FrontRight    float64                `protobuf:"fixed64,2,opt,name=front_right,json=frontRight,proto3" json:"front_right,omitempty"`
+	RearLeft      float64                `protobuf:"fixed64,3,opt,name=rear_left,json=rearLeft,proto3" json:"rear_left,omitempty"`
+	RearRight     float64                `protobuf:"fixed64,4,opt,name=rear_right,json=rearRight,proto3" json:"rear_right,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *ContainerWeightProto) Reset() {
+	*x = ContainerWeightProto{}
+	mi := &file_api_proto_agv_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContainerWeightProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContainerWeightProto) ProtoMessage() {}
+
+func (x *ContainerWeightProto) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_agv_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContainerWeightProto.ProtoReflect.Descriptor instead.
+func (*ContainerWeightProto) Descriptor() ([]byte, []int) {
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ContainerWeightProto) GetFrontLeft() float64 {
+	if x != nil {
+		return x.FrontLeft
+	}
+	return 0
+}
+
+func (x *ContainerWeightProto) GetFrontRight() float64 {
+	if x != nil {
+		return x.FrontRight
+	}
+	return 0
+}
+
+func (x *ContainerWeightProto) GetRearLeft() float64 {
+	if x != nil {
+		return x.RearLeft
+	}
+	return 0
+}
+
+func (x *ContainerWeightProto) GetRearRight() float64 {
+	if x != nil {
+		return x.RearRight
+	}
+	return 0
+}
+
+type DispatchTaskResponse struct {
+	state               protoimpl.MessageState    `protogen:"open.v1"`
+	Success             bool                      `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message             string                    `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	RouteId             string                    `protobuf:"bytes,3,opt,name=route_id,json=routeId,proto3" json:"route_id,omitempty"`
+	Frames              []*ControlFrameProto      `protobuf:"bytes,4,rep,name=frames,proto3" json:"frames,omitempty"`
+	TotalDistance       float64                   `protobuf:"fixed64,5,opt,name=total_distance,json=totalDistance,proto3" json:"total_distance,omitempty"`
+	EstimatedTime       float64                   `protobuf:"fixed64,6,opt,name=estimated_time,json=estimatedTime,proto3" json:"estimated_time,omitempty"`
+	KinematicAssessment *KinematicAssessmentProto `protobuf:"bytes,7,opt,name=kinematic_assessment,json=kinematicAssessment,proto3" json:"kinematic_assessment,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
 func (x *DispatchTaskResponse) Reset() {
 	*x = DispatchTaskResponse{}
-	mi := &file_api_proto_agv_proto_msgTypes[1]
+	mi := &file_api_proto_agv_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -139,7 +216,7 @@ func (x *DispatchTaskResponse) String() string {
 func (*DispatchTaskResponse) ProtoMessage() {}
 
 func (x *DispatchTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_agv_proto_msgTypes[1]
+	mi := &file_api_proto_agv_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -152,7 +229,7 @@ func (x *DispatchTaskResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DispatchTaskResponse.ProtoReflect.Descriptor instead.
 func (*DispatchTaskResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_agv_proto_rawDescGZIP(), []int{1}
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *DispatchTaskResponse) GetSuccess() bool {
@@ -197,6 +274,113 @@ func (x *DispatchTaskResponse) GetEstimatedTime() float64 {
 	return 0
 }
 
+func (x *DispatchTaskResponse) GetKinematicAssessment() *KinematicAssessmentProto {
+	if x != nil {
+		return x.KinematicAssessment
+	}
+	return nil
+}
+
+type KinematicAssessmentProto struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	IsDegraded           bool                   `protobuf:"varint,1,opt,name=is_degraded,json=isDegraded,proto3" json:"is_degraded,omitempty"`
+	Eccentricity         float64                `protobuf:"fixed64,2,opt,name=eccentricity,proto3" json:"eccentricity,omitempty"`
+	Direction            string                 `protobuf:"bytes,3,opt,name=direction,proto3" json:"direction,omitempty"`
+	SpeedReductionFactor float64                `protobuf:"fixed64,4,opt,name=speed_reduction_factor,json=speedReductionFactor,proto3" json:"speed_reduction_factor,omitempty"`
+	MaxStraightSpeed     float64                `protobuf:"fixed64,5,opt,name=max_straight_speed,json=maxStraightSpeed,proto3" json:"max_straight_speed,omitempty"`
+	MaxTurnSpeed         float64                `protobuf:"fixed64,6,opt,name=max_turn_speed,json=maxTurnSpeed,proto3" json:"max_turn_speed,omitempty"`
+	RiskLevel            string                 `protobuf:"bytes,7,opt,name=risk_level,json=riskLevel,proto3" json:"risk_level,omitempty"`
+	Reason               string                 `protobuf:"bytes,8,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *KinematicAssessmentProto) Reset() {
+	*x = KinematicAssessmentProto{}
+	mi := &file_api_proto_agv_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KinematicAssessmentProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KinematicAssessmentProto) ProtoMessage() {}
+
+func (x *KinematicAssessmentProto) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_agv_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KinematicAssessmentProto.ProtoReflect.Descriptor instead.
+func (*KinematicAssessmentProto) Descriptor() ([]byte, []int) {
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *KinematicAssessmentProto) GetIsDegraded() bool {
+	if x != nil {
+		return x.IsDegraded
+	}
+	return false
+}
+
+func (x *KinematicAssessmentProto) GetEccentricity() float64 {
+	if x != nil {
+		return x.Eccentricity
+	}
+	return 0
+}
+
+func (x *KinematicAssessmentProto) GetDirection() string {
+	if x != nil {
+		return x.Direction
+	}
+	return ""
+}
+
+func (x *KinematicAssessmentProto) GetSpeedReductionFactor() float64 {
+	if x != nil {
+		return x.SpeedReductionFactor
+	}
+	return 0
+}
+
+func (x *KinematicAssessmentProto) GetMaxStraightSpeed() float64 {
+	if x != nil {
+		return x.MaxStraightSpeed
+	}
+	return 0
+}
+
+func (x *KinematicAssessmentProto) GetMaxTurnSpeed() float64 {
+	if x != nil {
+		return x.MaxTurnSpeed
+	}
+	return 0
+}
+
+func (x *KinematicAssessmentProto) GetRiskLevel() string {
+	if x != nil {
+		return x.RiskLevel
+	}
+	return ""
+}
+
+func (x *KinematicAssessmentProto) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 type ControlFrameProto struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Sequence      int32                  `protobuf:"varint,1,opt,name=sequence,proto3" json:"sequence,omitempty"`
@@ -213,7 +397,7 @@ type ControlFrameProto struct {
 
 func (x *ControlFrameProto) Reset() {
 	*x = ControlFrameProto{}
-	mi := &file_api_proto_agv_proto_msgTypes[2]
+	mi := &file_api_proto_agv_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -225,7 +409,7 @@ func (x *ControlFrameProto) String() string {
 func (*ControlFrameProto) ProtoMessage() {}
 
 func (x *ControlFrameProto) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_agv_proto_msgTypes[2]
+	mi := &file_api_proto_agv_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -238,7 +422,7 @@ func (x *ControlFrameProto) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlFrameProto.ProtoReflect.Descriptor instead.
 func (*ControlFrameProto) Descriptor() ([]byte, []int) {
-	return file_api_proto_agv_proto_rawDescGZIP(), []int{2}
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ControlFrameProto) GetSequence() int32 {
@@ -306,7 +490,7 @@ type StreamTaskStatusRequest struct {
 
 func (x *StreamTaskStatusRequest) Reset() {
 	*x = StreamTaskStatusRequest{}
-	mi := &file_api_proto_agv_proto_msgTypes[3]
+	mi := &file_api_proto_agv_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -318,7 +502,7 @@ func (x *StreamTaskStatusRequest) String() string {
 func (*StreamTaskStatusRequest) ProtoMessage() {}
 
 func (x *StreamTaskStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_agv_proto_msgTypes[3]
+	mi := &file_api_proto_agv_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -331,7 +515,7 @@ func (x *StreamTaskStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamTaskStatusRequest.ProtoReflect.Descriptor instead.
 func (*StreamTaskStatusRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_agv_proto_rawDescGZIP(), []int{3}
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StreamTaskStatusRequest) GetTaskId() string {
@@ -355,7 +539,7 @@ type TaskStatusUpdate struct {
 
 func (x *TaskStatusUpdate) Reset() {
 	*x = TaskStatusUpdate{}
-	mi := &file_api_proto_agv_proto_msgTypes[4]
+	mi := &file_api_proto_agv_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -367,7 +551,7 @@ func (x *TaskStatusUpdate) String() string {
 func (*TaskStatusUpdate) ProtoMessage() {}
 
 func (x *TaskStatusUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_agv_proto_msgTypes[4]
+	mi := &file_api_proto_agv_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -380,7 +564,7 @@ func (x *TaskStatusUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskStatusUpdate.ProtoReflect.Descriptor instead.
 func (*TaskStatusUpdate) Descriptor() ([]byte, []int) {
-	return file_api_proto_agv_proto_rawDescGZIP(), []int{4}
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *TaskStatusUpdate) GetTaskId() string {
@@ -436,7 +620,7 @@ type GetRouteRequest struct {
 
 func (x *GetRouteRequest) Reset() {
 	*x = GetRouteRequest{}
-	mi := &file_api_proto_agv_proto_msgTypes[5]
+	mi := &file_api_proto_agv_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -448,7 +632,7 @@ func (x *GetRouteRequest) String() string {
 func (*GetRouteRequest) ProtoMessage() {}
 
 func (x *GetRouteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_agv_proto_msgTypes[5]
+	mi := &file_api_proto_agv_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -461,7 +645,7 @@ func (x *GetRouteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRouteRequest.ProtoReflect.Descriptor instead.
 func (*GetRouteRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_agv_proto_rawDescGZIP(), []int{5}
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetRouteRequest) GetSourceNodeId() string {
@@ -498,7 +682,7 @@ type GetRouteResponse struct {
 
 func (x *GetRouteResponse) Reset() {
 	*x = GetRouteResponse{}
-	mi := &file_api_proto_agv_proto_msgTypes[6]
+	mi := &file_api_proto_agv_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -510,7 +694,7 @@ func (x *GetRouteResponse) String() string {
 func (*GetRouteResponse) ProtoMessage() {}
 
 func (x *GetRouteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_agv_proto_msgTypes[6]
+	mi := &file_api_proto_agv_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -523,7 +707,7 @@ func (x *GetRouteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRouteResponse.ProtoReflect.Descriptor instead.
 func (*GetRouteResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_agv_proto_rawDescGZIP(), []int{6}
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetRouteResponse) GetFound() bool {
@@ -573,7 +757,7 @@ type PathNodeProto struct {
 
 func (x *PathNodeProto) Reset() {
 	*x = PathNodeProto{}
-	mi := &file_api_proto_agv_proto_msgTypes[7]
+	mi := &file_api_proto_agv_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -585,7 +769,7 @@ func (x *PathNodeProto) String() string {
 func (*PathNodeProto) ProtoMessage() {}
 
 func (x *PathNodeProto) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_agv_proto_msgTypes[7]
+	mi := &file_api_proto_agv_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -598,7 +782,7 @@ func (x *PathNodeProto) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PathNodeProto.ProtoReflect.Descriptor instead.
 func (*PathNodeProto) Descriptor() ([]byte, []int) {
-	return file_api_proto_agv_proto_rawDescGZIP(), []int{7}
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PathNodeProto) GetId() string {
@@ -642,7 +826,7 @@ type EdgeInfoProto struct {
 
 func (x *EdgeInfoProto) Reset() {
 	*x = EdgeInfoProto{}
-	mi := &file_api_proto_agv_proto_msgTypes[8]
+	mi := &file_api_proto_agv_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -654,7 +838,7 @@ func (x *EdgeInfoProto) String() string {
 func (*EdgeInfoProto) ProtoMessage() {}
 
 func (x *EdgeInfoProto) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_agv_proto_msgTypes[8]
+	mi := &file_api_proto_agv_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -667,7 +851,7 @@ func (x *EdgeInfoProto) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EdgeInfoProto.ProtoReflect.Descriptor instead.
 func (*EdgeInfoProto) Descriptor() ([]byte, []int) {
-	return file_api_proto_agv_proto_rawDescGZIP(), []int{8}
+	return file_api_proto_agv_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *EdgeInfoProto) GetFrom() string {
@@ -709,7 +893,7 @@ var File_api_proto_agv_proto protoreflect.FileDescriptor
 
 const file_api_proto_agv_proto_rawDesc = "" +
 	"\n" +
-	"\x13api/proto/agv.proto\x12\x03agv\"\xf5\x01\n" +
+	"\x13api/proto/agv.proto\x12\x03agv\"\xbb\x02\n" +
 	"\x13DispatchTaskRequest\x12\x17\n" +
 	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12!\n" +
 	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x12\x15\n" +
@@ -718,14 +902,35 @@ const file_api_proto_agv_proto_rawDesc = "" +
 	"yardNodeId\x12(\n" +
 	"\x10quayside_node_id\x18\x05 \x01(\tR\x0equaysideNodeId\x12\x1a\n" +
 	"\bpriority\x18\x06 \x01(\x05R\bpriority\x12#\n" +
-	"\rdeadline_unix\x18\a \x01(\x03R\fdeadlineUnix\"\xe3\x01\n" +
+	"\rdeadline_unix\x18\a \x01(\x03R\fdeadlineUnix\x12D\n" +
+	"\x10container_weight\x18\b \x01(\v2\x19.agv.ContainerWeightProtoR\x0fcontainerWeight\"\x92\x01\n" +
+	"\x14ContainerWeightProto\x12\x1d\n" +
+	"\n" +
+	"front_left\x18\x01 \x01(\x01R\tfrontLeft\x12\x1f\n" +
+	"\vfront_right\x18\x02 \x01(\x01R\n" +
+	"frontRight\x12\x1b\n" +
+	"\trear_left\x18\x03 \x01(\x01R\brearLeft\x12\x1d\n" +
+	"\n" +
+	"rear_right\x18\x04 \x01(\x01R\trearRight\"\xb5\x02\n" +
 	"\x14DispatchTaskResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x19\n" +
 	"\broute_id\x18\x03 \x01(\tR\arouteId\x12.\n" +
 	"\x06frames\x18\x04 \x03(\v2\x16.agv.ControlFrameProtoR\x06frames\x12%\n" +
 	"\x0etotal_distance\x18\x05 \x01(\x01R\rtotalDistance\x12%\n" +
-	"\x0eestimated_time\x18\x06 \x01(\x01R\restimatedTime\"\xf1\x01\n" +
+	"\x0eestimated_time\x18\x06 \x01(\x01R\restimatedTime\x12P\n" +
+	"\x14kinematic_assessment\x18\a \x01(\v2\x1d.agv.KinematicAssessmentProtoR\x13kinematicAssessment\"\xbe\x02\n" +
+	"\x18KinematicAssessmentProto\x12\x1f\n" +
+	"\vis_degraded\x18\x01 \x01(\bR\n" +
+	"isDegraded\x12\"\n" +
+	"\feccentricity\x18\x02 \x01(\x01R\feccentricity\x12\x1c\n" +
+	"\tdirection\x18\x03 \x01(\tR\tdirection\x124\n" +
+	"\x16speed_reduction_factor\x18\x04 \x01(\x01R\x14speedReductionFactor\x12,\n" +
+	"\x12max_straight_speed\x18\x05 \x01(\x01R\x10maxStraightSpeed\x12$\n" +
+	"\x0emax_turn_speed\x18\x06 \x01(\x01R\fmaxTurnSpeed\x12\x1d\n" +
+	"\n" +
+	"risk_level\x18\a \x01(\tR\triskLevel\x12\x16\n" +
+	"\x06reason\x18\b \x01(\tR\x06reason\"\xf1\x01\n" +
 	"\x11ControlFrameProto\x12\x1a\n" +
 	"\bsequence\x18\x01 \x01(\x05R\bsequence\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12\x1a\n" +
@@ -785,33 +990,37 @@ func file_api_proto_agv_proto_rawDescGZIP() []byte {
 	return file_api_proto_agv_proto_rawDescData
 }
 
-var file_api_proto_agv_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_api_proto_agv_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_api_proto_agv_proto_goTypes = []any{
-	(*DispatchTaskRequest)(nil),     // 0: agv.DispatchTaskRequest
-	(*DispatchTaskResponse)(nil),    // 1: agv.DispatchTaskResponse
-	(*ControlFrameProto)(nil),       // 2: agv.ControlFrameProto
-	(*StreamTaskStatusRequest)(nil), // 3: agv.StreamTaskStatusRequest
-	(*TaskStatusUpdate)(nil),        // 4: agv.TaskStatusUpdate
-	(*GetRouteRequest)(nil),         // 5: agv.GetRouteRequest
-	(*GetRouteResponse)(nil),        // 6: agv.GetRouteResponse
-	(*PathNodeProto)(nil),           // 7: agv.PathNodeProto
-	(*EdgeInfoProto)(nil),           // 8: agv.EdgeInfoProto
+	(*DispatchTaskRequest)(nil),      // 0: agv.DispatchTaskRequest
+	(*ContainerWeightProto)(nil),     // 1: agv.ContainerWeightProto
+	(*DispatchTaskResponse)(nil),     // 2: agv.DispatchTaskResponse
+	(*KinematicAssessmentProto)(nil), // 3: agv.KinematicAssessmentProto
+	(*ControlFrameProto)(nil),        // 4: agv.ControlFrameProto
+	(*StreamTaskStatusRequest)(nil),  // 5: agv.StreamTaskStatusRequest
+	(*TaskStatusUpdate)(nil),         // 6: agv.TaskStatusUpdate
+	(*GetRouteRequest)(nil),          // 7: agv.GetRouteRequest
+	(*GetRouteResponse)(nil),         // 8: agv.GetRouteResponse
+	(*PathNodeProto)(nil),            // 9: agv.PathNodeProto
+	(*EdgeInfoProto)(nil),            // 10: agv.EdgeInfoProto
 }
 var file_api_proto_agv_proto_depIdxs = []int32{
-	2, // 0: agv.DispatchTaskResponse.frames:type_name -> agv.ControlFrameProto
-	7, // 1: agv.GetRouteResponse.path:type_name -> agv.PathNodeProto
-	8, // 2: agv.GetRouteResponse.edges:type_name -> agv.EdgeInfoProto
-	0, // 3: agv.AGVDispatchService.DispatchTask:input_type -> agv.DispatchTaskRequest
-	3, // 4: agv.AGVDispatchService.StreamTaskStatus:input_type -> agv.StreamTaskStatusRequest
-	5, // 5: agv.AGVDispatchService.GetRoute:input_type -> agv.GetRouteRequest
-	1, // 6: agv.AGVDispatchService.DispatchTask:output_type -> agv.DispatchTaskResponse
-	4, // 7: agv.AGVDispatchService.StreamTaskStatus:output_type -> agv.TaskStatusUpdate
-	6, // 8: agv.AGVDispatchService.GetRoute:output_type -> agv.GetRouteResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1,  // 0: agv.DispatchTaskRequest.container_weight:type_name -> agv.ContainerWeightProto
+	4,  // 1: agv.DispatchTaskResponse.frames:type_name -> agv.ControlFrameProto
+	3,  // 2: agv.DispatchTaskResponse.kinematic_assessment:type_name -> agv.KinematicAssessmentProto
+	9,  // 3: agv.GetRouteResponse.path:type_name -> agv.PathNodeProto
+	10, // 4: agv.GetRouteResponse.edges:type_name -> agv.EdgeInfoProto
+	0,  // 5: agv.AGVDispatchService.DispatchTask:input_type -> agv.DispatchTaskRequest
+	5,  // 6: agv.AGVDispatchService.StreamTaskStatus:input_type -> agv.StreamTaskStatusRequest
+	7,  // 7: agv.AGVDispatchService.GetRoute:input_type -> agv.GetRouteRequest
+	2,  // 8: agv.AGVDispatchService.DispatchTask:output_type -> agv.DispatchTaskResponse
+	6,  // 9: agv.AGVDispatchService.StreamTaskStatus:output_type -> agv.TaskStatusUpdate
+	8,  // 10: agv.AGVDispatchService.GetRoute:output_type -> agv.GetRouteResponse
+	8,  // [8:11] is the sub-list for method output_type
+	5,  // [5:8] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_agv_proto_init() }
@@ -825,7 +1034,7 @@ func file_api_proto_agv_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_agv_proto_rawDesc), len(file_api_proto_agv_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

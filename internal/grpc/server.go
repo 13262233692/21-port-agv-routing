@@ -11,6 +11,7 @@ import (
 
 	pb "github.com/port-agv/routing/api/proto/agv"
 	"github.com/port-agv/routing/internal/graph"
+	"github.com/port-agv/routing/internal/kinematics"
 	"github.com/port-agv/routing/internal/mqtt"
 	"github.com/port-agv/routing/internal/router"
 	"github.com/port-agv/routing/internal/scheduler"
@@ -80,6 +81,18 @@ func (s *Server) DispatchTask(ctx context.Context, req *pb.DispatchTaskRequest) 
 }
 
 func (s *Server) dispatchWithScheduler(req *pb.DispatchTaskRequest) (*pb.DispatchTaskResponse, error) {
+	if req.ContainerWeight != nil && s.scheduler.SafetyGateway() != nil {
+		cw := kinematics.CornerWeights{
+			FrontLeft:  req.ContainerWeight.FrontLeft,
+			FrontRight: req.ContainerWeight.FrontRight,
+			RearLeft:   req.ContainerWeight.RearLeft,
+			RearRight:  req.ContainerWeight.RearRight,
+		}
+		s.scheduler.SafetyGateway().RegisterContainerLoad(req.ContainerId, cw)
+		log.Printf("[gRPC] Container %s weight registered: FL=%.0f FR=%.0f RL=%.0f RR=%.0f",
+			req.ContainerId, cw.FrontLeft, cw.FrontRight, cw.RearLeft, cw.RearRight)
+	}
+
 	result := s.scheduler.DispatchTask(
 		req.TaskId, req.ContainerId, req.AgvId,
 		req.YardNodeId, req.QuaysideNodeId,
@@ -145,14 +158,54 @@ func (s *Server) dispatchWithScheduler(req *pb.DispatchTaskRequest) (*pb.Dispatc
 		msg = fmt.Sprintf("%s (victim: %s)", msg, result.RerouteVictim)
 	}
 
+	var kinAssess *pb.KinematicAssessmentProto
+	if result.KinematicResult != nil && result.KinematicResult.DegradedSpeeds != nil {
+		ds := result.KinematicResult.DegradedSpeeds
+		riskStr := riskLevelToString(ds.RiskLevel)
+		eccVal := 0.0
+		dir := ""
+		if result.KinematicResult.Profile != nil && result.KinematicResult.Profile.Eccentricity != nil {
+			eccVal = result.KinematicResult.Profile.Eccentricity.Magnitude
+			dir = result.KinematicResult.Profile.Eccentricity.Direction
+		}
+		kinAssess = &pb.KinematicAssessmentProto{
+			IsDegraded:          ds.IsDegraded,
+			Eccentricity:        eccVal,
+			Direction:           dir,
+			SpeedReductionFactor: ds.SpeedReductionFactor,
+			MaxStraightSpeed:    ds.StraightMaxSpeed,
+			MaxTurnSpeed:        ds.TurnMaxSpeed,
+			RiskLevel:           riskStr,
+			Reason:              ds.Reason,
+		}
+	}
+
 	return &pb.DispatchTaskResponse{
-		Success:        true,
-		Message:        msg,
-		RouteId:        result.RouteID,
-		Frames:         pbFrames,
-		TotalDistance:  result.TotalDist,
-		EstimatedTime:  estimatedTime,
+		Success:             true,
+		Message:             msg,
+		RouteId:             result.RouteID,
+		Frames:              pbFrames,
+		TotalDistance:       result.TotalDist,
+		EstimatedTime:       estimatedTime,
+		KinematicAssessment: kinAssess,
 	}, nil
+}
+
+func riskLevelToString(r kinematics.RolloverRisk) string {
+	switch r {
+	case kinematics.RiskNone:
+		return "none"
+	case kinematics.RiskLow:
+		return "low"
+	case kinematics.RiskModerate:
+		return "moderate"
+	case kinematics.RiskHigh:
+		return "high"
+	case kinematics.RiskCritical:
+		return "critical"
+	default:
+		return "unknown"
+	}
 }
 
 func (s *Server) dispatchLegacy(req *pb.DispatchTaskRequest) (*pb.DispatchTaskResponse, error) {

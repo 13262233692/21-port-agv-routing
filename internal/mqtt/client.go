@@ -46,19 +46,23 @@ type AGVStatusMessage struct {
 }
 
 type Client struct {
-	config   Config
-	client   pahomqtt.Client
-	graph    *graph.Digraph
-	mu       sync.RWMutex
-	stopCh   chan struct{}
+	config             Config
+	client             pahomqtt.Client
+	graph              *graph.Digraph
+	craneSensorHandler CraneSensorHandler
+	mu                 sync.RWMutex
+	stopCh             chan struct{}
 }
 
+type CraneSensorHandler func(payload []byte)
+
 const (
-	TopicDeviceStatus  = "port/device/+/status"
-	TopicCongestion    = "port/congestion/+/+"
-	TopicAGVStatus     = "port/agv/+/status"
-	TopicControlFrame  = "port/agv/%s/command"
-	TopicDevicePrefix  = "port/device/"
+	TopicDeviceStatus     = "port/device/+/status"
+	TopicCongestion       = "port/congestion/+/+"
+	TopicAGVStatus        = "port/agv/+/status"
+	TopicControlFrame     = "port/agv/%s/command"
+	TopicCraneSensor      = "port/crane/+/container_weight"
+	TopicDevicePrefix     = "port/device/"
 	TopicCongestionPrefix = "port/congestion/"
 )
 
@@ -68,6 +72,10 @@ func NewClient(config Config, g *graph.Digraph) *Client {
 		graph:  g,
 		stopCh: make(chan struct{}),
 	}
+}
+
+func (c *Client) SetCraneSensorHandler(handler CraneSensorHandler) {
+	c.craneSensorHandler = handler
 }
 
 func (c *Client) Connect() error {
@@ -122,6 +130,14 @@ func (c *Client) subscribeAll() {
 	} else {
 		log.Printf("[MQTT] Subscribed to %s", TopicAGVStatus)
 	}
+
+	if c.craneSensorHandler != nil {
+		if token := c.client.Subscribe(TopicCraneSensor, qos, c.handleCraneSensor); token.Wait() && token.Error() != nil {
+			log.Printf("[MQTT] Subscribe %s failed: %v", TopicCraneSensor, token.Error())
+		} else {
+			log.Printf("[MQTT] Subscribed to %s", TopicCraneSensor)
+		}
+	}
 }
 
 func (c *Client) handleDeviceStatus(client pahomqtt.Client, msg pahomqtt.Message) {
@@ -165,6 +181,12 @@ func (c *Client) handleAGVStatus(client pahomqtt.Client, msg pahomqtt.Message) {
 
 	log.Printf("[MQTT] AGV %s: node=%s speed=%.1f battery=%.0f%% status=%s",
 		payload.AGVID, payload.NodeID, payload.Speed, payload.Battery, payload.Status)
+}
+
+func (c *Client) handleCraneSensor(client pahomqtt.Client, msg pahomqtt.Message) {
+	if c.craneSensorHandler != nil {
+		c.craneSensorHandler(msg.Payload())
+	}
 }
 
 func (c *Client) PublishControlFrames(agvID string, frames interface{}) error {

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/port-agv/routing/internal/graph"
+	"github.com/port-agv/routing/internal/kinematics"
 	"github.com/port-agv/routing/internal/mqtt"
 	"github.com/port-agv/routing/internal/router"
 )
@@ -39,22 +40,24 @@ type ScheduledTask struct {
 }
 
 type DispatchResult struct {
-	Success      bool
-	Message      string
-	Route        *TWRouteResult
-	Frames       []router.ControlFrame
-	RouteID      string
-	TotalTime    float64
-	TotalDist    float64
-	Rerouted     bool
-	RerouteVictim string
+	Success         bool
+	Message         string
+	Route           *TWRouteResult
+	Frames          []router.ControlFrame
+	RouteID         string
+	TotalTime       float64
+	TotalDist       float64
+	Rerouted        bool
+	RerouteVictim   string
+	KinematicResult *kinematics.InterceptionResult
 }
 
 type Scheduler struct {
-	graph      *graph.Digraph
-	twTable    *TimeWindowTable
-	tracker    *AGVTracker
-	mqttClient *mqtt.Client
+	graph          *graph.Digraph
+	twTable        *TimeWindowTable
+	tracker        *AGVTracker
+	mqttClient     *mqtt.Client
+	safetyGateway  *kinematics.SafetyGateway
 
 	mu          sync.Mutex
 	tasks       map[string]*ScheduledTask
@@ -69,18 +72,24 @@ type Scheduler struct {
 }
 
 func NewScheduler(g *graph.Digraph, mqttClient *mqtt.Client) *Scheduler {
+	sg := kinematics.NewSafetyGateway()
 	return &Scheduler{
-		graph:       g,
-		twTable:     NewTimeWindowTable(),
-		tracker:     NewAGVTracker(),
-		mqttClient:  mqttClient,
-		tasks:       make(map[string]*ScheduledTask),
-		agvTasks:    make(map[string]string),
-		priorities:  make(map[string]int32),
-		MaxWaitTime: DefaultMaxWaitTime,
+		graph:         g,
+		twTable:       NewTimeWindowTable(),
+		tracker:       NewAGVTracker(),
+		mqttClient:    mqttClient,
+		safetyGateway: sg,
+		tasks:         make(map[string]*ScheduledTask),
+		agvTasks:      make(map[string]string),
+		priorities:    make(map[string]int32),
+		MaxWaitTime:   DefaultMaxWaitTime,
 		DeadlockCheck: true,
-		RerouteLimit: 3,
+		RerouteLimit:  3,
 	}
+}
+
+func (s *Scheduler) SafetyGateway() *kinematics.SafetyGateway {
+	return s.safetyGateway
 }
 
 func (s *Scheduler) DispatchTask(taskID, containerID, agvID, yardNode, quayNode string, priority int32, deadlineUnix int64) *DispatchResult {
@@ -145,6 +154,16 @@ func (s *Scheduler) DispatchTask(taskID, containerID, agvID, yardNode, quayNode 
 	basicRoute := router.ConvertTWRouteToRouteResult(route)
 	frames := router.DecomposePathWithWaits(basicRoute, route, agvID)
 
+	var kinematicResult *kinematics.InterceptionResult
+	if s.safetyGateway != nil {
+		kinematicResult = s.safetyGateway.Intercept(containerID)
+		if kinematicResult != nil && kinematicResult.DegradedSpeeds != nil && kinematicResult.DegradedSpeeds.IsDegraded {
+			log.Printf("[Scheduler] Kinematic degradation for container=%s: factor=%.2f reason=%s",
+				containerID, kinematicResult.DegradedSpeeds.SpeedReductionFactor, kinematicResult.Reason)
+			frames = s.safetyGateway.ApplySpeedDegradation(frames, kinematicResult.DegradedSpeeds)
+		}
+	}
+
 	task := &ScheduledTask{
 		TaskID:       taskID,
 		ContainerID:  containerID,
@@ -177,13 +196,14 @@ func (s *Scheduler) DispatchTask(taskID, containerID, agvID, yardNode, quayNode 
 	}
 
 	return &DispatchResult{
-		Success:   true,
-		Message:   "task dispatched with time-window reservations",
-		Route:     route,
-		Frames:    frames,
-		RouteID:   fmt.Sprintf("tw-route-%s-%d", taskID, time.Now().UnixMilli()),
-		TotalTime: route.TotalTime,
-		TotalDist: route.TotalDistance,
+		Success:         true,
+		Message:         "task dispatched with time-window reservations",
+		Route:           route,
+		Frames:          frames,
+		RouteID:         fmt.Sprintf("tw-route-%s-%d", taskID, time.Now().UnixMilli()),
+		TotalTime:       route.TotalTime,
+		TotalDist:       route.TotalDistance,
+		KinematicResult: kinematicResult,
 	}
 }
 

@@ -18,6 +18,14 @@ message DispatchTaskRequest {
   string quayside_node_id = 5;
   int32 priority = 6;
   int64 deadline_unix = 7;
+  ContainerWeightProto container_weight = 8;
+}
+
+message ContainerWeightProto {
+  double front_left = 1;
+  double front_right = 2;
+  double rear_left = 3;
+  double rear_right = 4;
 }
 
 message DispatchTaskResponse {
@@ -27,6 +35,18 @@ message DispatchTaskResponse {
   repeated ControlFrameProto frames = 4;
   double total_distance = 5;
   double estimated_time = 6;
+  KinematicAssessmentProto kinematic_assessment = 7;
+}
+
+message KinematicAssessmentProto {
+  bool is_degraded = 1;
+  double eccentricity = 2;
+  string direction = 3;
+  double speed_reduction_factor = 4;
+  double max_straight_speed = 5;
+  double max_turn_speed = 6;
+  string risk_level = 7;
+  string reason = 8;
 }
 
 message ControlFrameProto {
