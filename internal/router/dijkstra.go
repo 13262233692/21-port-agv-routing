@@ -250,3 +250,23 @@ func DijkstraMultiTarget(g *graph.Digraph, source string, targets []string) *Rou
 		Edges:    edgeList,
 	}
 }
+
+func ConvertTWRouteToRouteResult(twRoute interface {
+	GetPathNodes() []PathNode
+	GetEdges() []*graph.Edge
+	GetTotalDistance() float64
+	GetTotalTime() float64
+}) *RouteResult {
+	if twRoute == nil {
+		return nil
+	}
+	pathNodes := twRoute.GetPathNodes()
+	path := make([]PathNode, len(pathNodes))
+	copy(path, pathNodes)
+	return &RouteResult{
+		Path:     path,
+		Distance: twRoute.GetTotalDistance(),
+		Weight:   twRoute.GetTotalTime(),
+		Edges:    twRoute.GetEdges(),
+	}
+}

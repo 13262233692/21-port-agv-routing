@@ -8,10 +8,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/port-agv/routing/internal/graph"
 	"github.com/port-agv/routing/internal/grpc"
 	"github.com/port-agv/routing/internal/mqtt"
+	"github.com/port-agv/routing/internal/scheduler"
 )
 
 type Config struct {
@@ -222,7 +224,15 @@ func main() {
 		log.Println("MQTT client connected")
 	}
 
-	grpcServer := grpc.NewServer(g, mqttClient, *grpcPort)
+	sched := scheduler.NewScheduler(g, mqttClient)
+	sched.MaxWaitTime = 30.0
+	sched.DeadlockCheck = true
+	sched.RerouteLimit = 3
+
+	grpcServer := grpc.NewServer(g, mqttClient, sched, *grpcPort)
+
+	deadlockStopCh := sched.StartDeadlockMonitor(5 * time.Second)
+	defer close(deadlockStopCh)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)

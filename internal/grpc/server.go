@@ -13,6 +13,7 @@ import (
 	"github.com/port-agv/routing/internal/graph"
 	"github.com/port-agv/routing/internal/mqtt"
 	"github.com/port-agv/routing/internal/router"
+	"github.com/port-agv/routing/internal/scheduler"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -48,6 +49,7 @@ type Server struct {
 
 	graph      *graph.Digraph
 	mqttClient *mqtt.Client
+	scheduler  *scheduler.Scheduler
 
 	mu        sync.RWMutex
 	tasks     map[string]*TaskInfo
@@ -57,10 +59,11 @@ type Server struct {
 	port       int
 }
 
-func NewServer(g *graph.Digraph, mqttClient *mqtt.Client, port int) *Server {
+func NewServer(g *graph.Digraph, mqttClient *mqtt.Client, sched *scheduler.Scheduler, port int) *Server {
 	return &Server{
 		graph:      g,
 		mqttClient: mqttClient,
+		scheduler:  sched,
 		tasks:      make(map[string]*TaskInfo),
 		port:       port,
 	}
@@ -70,6 +73,89 @@ func (s *Server) DispatchTask(ctx context.Context, req *pb.DispatchTaskRequest) 
 	log.Printf("[gRPC] DispatchTask: task=%s container=%s agv=%s yard=%s quay=%s",
 		req.TaskId, req.ContainerId, req.AgvId, req.YardNodeId, req.QuaysideNodeId)
 
+	if s.scheduler != nil {
+		return s.dispatchWithScheduler(req)
+	}
+	return s.dispatchLegacy(req)
+}
+
+func (s *Server) dispatchWithScheduler(req *pb.DispatchTaskRequest) (*pb.DispatchTaskResponse, error) {
+	result := s.scheduler.DispatchTask(
+		req.TaskId, req.ContainerId, req.AgvId,
+		req.YardNodeId, req.QuaysideNodeId,
+		req.Priority, req.DeadlineUnix,
+	)
+
+	if !result.Success {
+		return &pb.DispatchTaskResponse{
+			Success: false,
+			Message: result.Message,
+		}, nil
+	}
+
+	var frames []router.ControlFrame
+	if result.Frames != nil {
+		frames = result.Frames
+	}
+
+	task := &TaskInfo{
+		TaskID:       req.TaskId,
+		ContainerID:  req.ContainerId,
+		AgvID:        req.AgvId,
+		YardNode:     req.YardNodeId,
+		QuaysideNode: req.QuaysideNodeId,
+		Priority:     req.Priority,
+		Deadline:     req.DeadlineUnix,
+		Status:       TaskDispatched,
+		Frames:       frames,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+
+	if result.Route != nil {
+		task.Route = router.ConvertTWRouteToRouteResult(result.Route)
+	}
+
+	s.mu.Lock()
+	s.tasks[req.TaskId] = task
+	s.mu.Unlock()
+	s.taskCount.Add(1)
+
+	pbFrames := make([]*pb.ControlFrameProto, len(frames))
+	for i, f := range frames {
+		pbFrames[i] = &pb.ControlFrameProto{
+			Sequence:    int32(f.Sequence),
+			NodeId:      f.NodeID,
+			Maneuver:    int32(f.Maneuver),
+			Speed:       f.Speed,
+			TargetAngle: f.TargetAngle,
+			DeltaAngle:  f.DeltaAngle,
+			Distance:    f.Distance,
+			AgvId:       f.AgvID,
+		}
+	}
+
+	estimatedTime := result.TotalTime
+	if estimatedTime == 0 && result.TotalDist > 0 {
+		estimatedTime = result.TotalDist / 3.0
+	}
+
+	msg := result.Message
+	if result.Rerouted {
+		msg = fmt.Sprintf("%s (victim: %s)", msg, result.RerouteVictim)
+	}
+
+	return &pb.DispatchTaskResponse{
+		Success:        true,
+		Message:        msg,
+		RouteId:        result.RouteID,
+		Frames:         pbFrames,
+		TotalDistance:  result.TotalDist,
+		EstimatedTime:  estimatedTime,
+	}, nil
+}
+
+func (s *Server) dispatchLegacy(req *pb.DispatchTaskRequest) (*pb.DispatchTaskResponse, error) {
 	route := router.Dijkstra(s.graph, req.YardNodeId, req.QuaysideNodeId)
 	if route == nil {
 		return &pb.DispatchTaskResponse{
@@ -133,7 +219,7 @@ func (s *Server) DispatchTask(ctx context.Context, req *pb.DispatchTaskRequest) 
 
 	return &pb.DispatchTaskResponse{
 		Success:        true,
-		Message:        "task dispatched successfully",
+		Message:        "task dispatched successfully (legacy mode)",
 		RouteId:        fmt.Sprintf("route-%s-%d", req.TaskId, time.Now().UnixMilli()),
 		Frames:         pbFrames,
 		TotalDistance:  route.Distance,

@@ -17,17 +17,19 @@ const (
 	ManeuverDecelerate
 	ManeuverStop
 	ManeuverStart
+	ManeuverWait
 )
 
 type ControlFrame struct {
-	Sequence    int         `json:"seq"`
-	NodeID      string      `json:"node_id"`
-	Maneuver    ManeuverType `json:"maneuver"`
-	Speed       float64     `json:"speed"`
-	TargetAngle float64     `json:"target_angle"`
-	DeltaAngle  float64     `json:"delta_angle"`
-	Distance    float64     `json:"distance"`
-	AgvID       string      `json:"agv_id,omitempty"`
+	Sequence     int         `json:"seq"`
+	NodeID       string      `json:"node_id"`
+	Maneuver     ManeuverType `json:"maneuver"`
+	Speed        float64     `json:"speed"`
+	TargetAngle  float64     `json:"target_angle"`
+	DeltaAngle   float64     `json:"delta_angle"`
+	Distance     float64     `json:"distance"`
+	WaitDuration float64     `json:"wait_duration,omitempty"`
+	AgvID        string      `json:"agv_id,omitempty"`
 }
 
 const (
@@ -165,4 +167,93 @@ func DecomposePath(route *RouteResult, agvID string) []ControlFrame {
 	}
 
 	return frames
+}
+
+func DecomposePathWithWaits(route *RouteResult, twRoute interface{ GetPathWaitTimes() []float64 }, agvID string) []ControlFrame {
+	if route == nil || len(route.Path) < 2 {
+		return nil
+	}
+
+	frames := DecomposePath(route, agvID)
+	if frames == nil {
+		return nil
+	}
+
+	waitTimes := twRoute.GetPathWaitTimes()
+	if len(waitTimes) != len(route.Path) {
+		return frames
+	}
+
+	var newFrames []ControlFrame
+	seq := 0
+
+	for _, f := range frames {
+		pathIdx := -1
+		for pi, pn := range route.Path {
+			if pn.ID == f.NodeID {
+				pathIdx = pi
+				break
+			}
+		}
+
+		if pathIdx >= 0 && pathIdx < len(waitTimes) && waitTimes[pathIdx] > 0.1 {
+			switch f.Maneuver {
+			case ManeuverStart, ManeuverStraight, ManeuverTurnLeft, ManeuverTurnRight, ManeuverUTurn:
+				newFrames = append(newFrames, ControlFrame{
+					Sequence:     seq,
+					NodeID:       f.NodeID,
+					Maneuver:     f.Maneuver,
+					Speed:        f.Speed,
+					TargetAngle:  f.TargetAngle,
+					DeltaAngle:   f.DeltaAngle,
+					Distance:     f.Distance,
+					WaitDuration: 0,
+				})
+				seq++
+
+				newFrames = append(newFrames, ControlFrame{
+					Sequence:     seq,
+					NodeID:       f.NodeID,
+					Maneuver:     ManeuverDecelerate,
+					Speed:        MinSpeed,
+					TargetAngle:  f.TargetAngle,
+					WaitDuration: 0,
+				})
+				seq++
+
+				newFrames = append(newFrames, ControlFrame{
+					Sequence:     seq,
+					NodeID:       f.NodeID,
+					Maneuver:     ManeuverWait,
+					Speed:        0,
+					WaitDuration: waitTimes[pathIdx],
+				})
+				seq++
+
+				newFrames = append(newFrames, ControlFrame{
+					Sequence:     seq,
+					NodeID:       f.NodeID,
+					Maneuver:     ManeuverStart,
+					Speed:        MinSpeed,
+					WaitDuration: 0,
+				})
+				seq++
+
+			default:
+				f.Sequence = seq
+				newFrames = append(newFrames, f)
+				seq++
+			}
+		} else {
+			f.Sequence = seq
+			newFrames = append(newFrames, f)
+			seq++
+		}
+	}
+
+	for i := range newFrames {
+		newFrames[i].AgvID = agvID
+	}
+
+	return newFrames
 }
